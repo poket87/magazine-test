@@ -1,4 +1,5 @@
 import React from "react";
+import "./App.css";
 
 import { Button } from "../elements";
 
@@ -45,13 +46,22 @@ const Upload = (props) => {
 
   return (
     <React.Fragment>
-      <input
-        type="file"
-        onChange={selectFile}
-        ref={fileInput}
-        disabled={is_uploading}
-      />
-      <Button _onClick={uploadFB}>업로드하기</Button>
+      <div className="filebox">
+        <input
+          className="upload-name"
+          value="첨부파일"
+          placeholder="첨부파일"
+        />
+        <label htmlFor="file">파일 찾기</label>
+        <input
+          type="file"
+          id="file"
+          onChange={selectFile}
+          ref={fileInput}
+          disabled={is_uploading}
+        />
+        {/* <Button _onClick={uploadFB}>업로드하기</Button> */}
+      </div>
     </React.Fragment>
   );
 };

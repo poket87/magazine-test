@@ -8,16 +8,26 @@ import { actionCreators as imageActions } from "./image";
 const SET_POST = "SET_POST";
 const ADD_POST = "ADD_POST";
 const EDIT_POST = "EDIT_POST";
+const DELETE_POST = "DELETE_POST";
+const LOADING = "LOADING";
 
-const setPost = createAction(SET_POST, (post_list) => ({ post_list }));
+const setPost = createAction(SET_POST, (post_list, paging) => ({
+  post_list,
+  paging,
+}));
 const addPost = createAction(ADD_POST, (post) => ({ post }));
 const editPost = createAction(EDIT_POST, (post_id, post) => ({
   post_id,
   post,
 }));
 
+const deletePost = createAction(DELETE_POST, (post_id) => ({ post_id }));
+const loading = createAction(LOADING, (is_loading) => ({ is_loading }));
+
 const initialState = {
   list: [],
+  paging: { start: null, next: null, size: 3 },
+  is_loading: true,
 };
 
 const initialPost = {
@@ -30,6 +40,7 @@ const initialPost = {
   contents: "",
   comment_cnt: 0,
   insert_dt: moment().format("YYYY-MM-DD hh:mm:ss"),
+  layout: "bottom",
 };
 
 const editPostFB = (post_id = null, post = {}) => {
@@ -89,7 +100,25 @@ const editPostFB = (post_id = null, post = {}) => {
   };
 };
 
-const addPostFB = (contents = "") => {
+const deletePostFB = (post_id) => {
+  return function (dispatch, getState, { history }) {
+    const postDB = firestore.collection("post");
+
+    postDB
+      .doc(post_id)
+      .delete()
+      .then(() => {
+        history.replace("/");
+        dispatch(deletePost(post_id));
+      })
+      .catch((err) => {
+        window.alert("삭제가 되지 않았어요!");
+        console.log(err);
+      });
+  };
+};
+
+const addPostFB = (contents = "", layout = "bottom") => {
   return function (dispatch, getState, { history }) {
     const postDB = firestore.collection("post");
 
@@ -102,6 +131,7 @@ const addPostFB = (contents = "") => {
     };
     const _post = {
       ...initialPost,
+      layout,
       contents: contents,
       insert_dt: moment().format("YYYY-MM-DD hh:mm:ss"),
     };
@@ -147,16 +177,77 @@ const addPostFB = (contents = "") => {
   };
 };
 
-const getPostFB = () => {
+// 미들웨어에서는 props 값을 전달해줘야 한다.
+const getPostFB = (start = null, size = 3) => {
   return function (dispatch, getState, { history }) {
+    let _paging = getState().post.paging;
+
+    if (_paging.start && !_paging.next) {
+      return;
+    }
+
+    dispatch(loading(true));
     const postDB = firestore.collection("post");
 
-    postDB.get().then((docs) => {
-      let post_list = [];
-      docs.forEach((doc) => {
-        let _post = doc.data();
+    let query = postDB.orderBy("insert_dt", "desc");
 
-        // ['comment_cnt', 'contents', ..]
+    if (start) {
+      query = query.startAt(start);
+    }
+
+    query
+      .limit(size + 1)
+      .get()
+      .then((docs) => {
+        let post_list = [];
+
+        let paging = {
+          start: docs.docs[0],
+          next:
+            docs.docs.length === initialState.paging.size + 1
+              ? docs.docs[docs.docs.length - 1]
+              : null,
+          size: initialState.paging.size,
+        };
+
+        docs.forEach((doc) => {
+          let _post = doc.data();
+
+          // ['comment_cnt', 'contents', ..]
+          let post = Object.keys(_post).reduce(
+            (acc, cur) => {
+              if (cur.indexOf("user_") !== -1) {
+                return {
+                  ...acc,
+                  user_info: { ...acc.user_info, [cur]: _post[cur] },
+                };
+              }
+              return { ...acc, [cur]: _post[cur] };
+            },
+            { id: doc.id, user_info: {} }
+          );
+
+          post_list.push(post);
+        });
+
+        // 마지막 데이터 안나오는거 해결하는 방법.
+        if (paging.next !== null) {
+          post_list.pop();
+        }
+
+        dispatch(setPost(post_list, paging));
+      });
+  };
+};
+
+const getOnePostFB = (id) => {
+  return function (dispatch, getState, { history }) {
+    const postDB = firestore.collection("post");
+    postDB
+      .doc(id)
+      .get()
+      .then((doc) => {
+        let _post = doc.data();
         let post = Object.keys(_post).reduce(
           (acc, cur) => {
             if (cur.indexOf("user_") !== -1) {
@@ -170,13 +261,8 @@ const getPostFB = () => {
           { id: doc.id, user_info: {} }
         );
 
-        post_list.push(post);
+        dispatch(setPost([post]));
       });
-
-      console.log(post_list);
-
-      dispatch(setPost(post_list));
-    });
   };
 };
 
@@ -184,7 +270,21 @@ export default handleActions(
   {
     [SET_POST]: (state, action) =>
       produce(state, (draft) => {
-        draft.list = action.payload.post_list;
+        draft.list.push(...action.payload.post_list);
+
+        draft.list = draft.list.reduce((acc, cur) => {
+          if (acc.findIndex((a) => a.id === cur.id) === -1) {
+            return [...acc, cur];
+          } else {
+            acc[acc.findIndex((a) => a.id === cur.id)] = cur;
+            return acc;
+          }
+        }, []);
+
+        if (action.payload.paging) {
+          draft.paging = action.payload.paging;
+        }
+        draft.is_loading = false;
       }),
 
     [ADD_POST]: (state, action) =>
@@ -197,6 +297,14 @@ export default handleActions(
 
         draft.list[idx] = { ...draft.list[idx], ...action.payload.post };
       }),
+    [DELETE_POST]: (state, action) =>
+      produce(state, (draft) => {
+        draft.list = draft.list.filter((p) => p.id !== action.payload.post_id);
+      }),
+    [LOADING]: (state, action) =>
+      produce(state, (draft) => {
+        draft.is_loading = action.payload.is_loading;
+      }),
   },
   initialState
 );
@@ -208,6 +316,8 @@ const actionCreators = {
   getPostFB,
   addPostFB,
   editPostFB,
+  getOnePostFB,
+  deletePostFB,
 };
 
 export { actionCreators };
