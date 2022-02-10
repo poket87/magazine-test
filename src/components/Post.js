@@ -51,7 +51,7 @@ const Post = (props) => {
               center
               size="15px"
               _onClick={(event) => {
-                event.stopPropagation();
+                // event.stopPropagation();
                 history.push(`/post/${props.id}`);
               }}
             >
@@ -62,7 +62,7 @@ const Post = (props) => {
               shape="square"
               src={props.image_url}
               _onClick={(event) => {
-                event.stopPropagation();
+                // event.stopPropagation();
                 history.push(`/post/${props.id}`);
               }}
             />
@@ -92,7 +92,7 @@ const Post = (props) => {
               shape="square"
               src={props.image_url}
               _onClick={(event) => {
-                event.stopPropagation();
+                // event.stopPropagation();
                 history.push(`/post/${props.id}`);
               }}
             />
@@ -102,7 +102,7 @@ const Post = (props) => {
               center
               size="15px"
               _onClick={(event) => {
-                event.stopPropagation();
+                // event.stopPropagation();
                 history.push(`/post/${props.id}`);
               }}
             >
@@ -129,7 +129,7 @@ const Post = (props) => {
             <Text
               margin="10px"
               _onClick={(event) => {
-                event.stopPropagation();
+                // event.stopPropagation();
                 history.push(`/post/${props.id}`);
               }}
             >
@@ -140,7 +140,7 @@ const Post = (props) => {
               shape="square"
               src={props.image_url}
               _onClick={(event) => {
-                event.stopPropagation();
+                // event.stopPropagation();
                 history.push(`/post/${props.id}`);
               }}
             />

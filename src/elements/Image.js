@@ -23,7 +23,7 @@ const Image = (props) => {
   }
 
   if (shape === "square") {
-    return <BigSquareImage {...styles}></BigSquareImage>;
+    return <ImageSqure {...styles}></ImageSqure>;
   }
 
   return (
@@ -71,7 +71,7 @@ const ImageCircle = styled.div`
   margin: 4px;
 `;
 
-const BigSquareImage = styled.img`
+const ImageSqure = styled.img`
   width: 100%;
   ${(props) => (props.half ? `flex-basis: 50%;` : "")}
   min-width: 250px;

@@ -25,9 +25,18 @@ const Header = (props) => {
       <React.Fragment>
         <Grid is_flex padding="4px 16px">
           <Grid>
-            <Text margin="0px" size="24px" bold>
-              헬로
+            <Text
+              margin="0px"
+              size="24px"
+              bold
+              _onClick={() => {
+                history.push("/");
+              }}
+            >
+              홈
             </Text>
+
+            <img src="../assets/preme.png" alt="main" />
           </Grid>
 
           <Grid is_flex>
@@ -54,8 +63,16 @@ const Header = (props) => {
     <React.Fragment>
       <Grid is_flex padding="4px 16px">
         <Grid>
-          <Text margin="0px" size="24px" bold>
-            헬로
+          <Text
+            style={{ cursor: "pointer" }}
+            margin="0px"
+            size="24px"
+            bold
+            _onClick={() => {
+              history.push("/");
+            }}
+          >
+            홈
           </Text>
         </Grid>
 
